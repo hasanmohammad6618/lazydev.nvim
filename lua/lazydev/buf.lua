@@ -6,10 +6,10 @@ local Workspace = require("lazydev.workspace")
 
 local M = {}
 
----@type table<number,number>
+---@type table<number, number>
 M.attached = {}
 
----@type table<string, vim.loader.ModuleInfo|false>
+---@type table<string, vim.loader.ModuleInfo | false>
 M.modules = {}
 
 function M.setup()
@@ -22,7 +22,7 @@ function M.setup()
   -- debounce updates in the same tick
   local update = vim.schedule_wrap(M.update)
   local timer = assert(vim.uv.new_timer())
-  M.update = function()
+  M.update = function ()
     timer:start(0, 0, update)
   end
 
@@ -30,7 +30,7 @@ function M.setup()
 
   vim.api.nvim_create_autocmd({ "LspAttach", "LspDetach" }, {
     group = group,
-    callback = function(ev)
+    callback = function (ev)
       local client = vim.lsp.get_client_by_id(ev.data.client_id)
       if client and Lsp.supports(client) then
         if ev.event == "LspAttach" then
@@ -39,7 +39,7 @@ function M.setup()
           M.attached[ev.buf] = nil
         end
       end
-    end,
+    end
   })
 
   -- Attach to all existing clients
@@ -57,7 +57,7 @@ end
 ---@return vim.lsp.Client[]
 function M.get_clients()
   local ret = Util.get_clients()
-  return vim.tbl_filter(function(client)
+  return vim.tbl_filter(function (client)
     return Lsp.supports(client)
   end, ret)
 end
@@ -75,15 +75,15 @@ function M.on_attach(client, buf)
   M.attached[buf] = buf
   -- Attach to buffer events
   vim.api.nvim_buf_attach(buf, false, {
-    on_lines = function(_, b, _, first, _, last)
+    on_lines = function (_, b, _, first, _, last)
       M.on_lines(b, first, last)
     end,
-    on_detach = function()
+    on_detach = function ()
       M.attached[buf] = nil
     end,
-    on_reload = function()
+    on_reload = function ()
       M.on_lines(buf, 0, vim.api.nvim_buf_line_count(buf))
-    end,
+    end
   })
   -- Trigger initial scan
   M.on_lines(buf, 0, vim.api.nvim_buf_line_count(buf))
@@ -92,9 +92,9 @@ function M.on_attach(client, buf)
 end
 
 --- Triggered when lines are changed
----@param buf number
+---@param buf   number
 ---@param first number
----@param last number
+---@param last  number
 function M.on_lines(buf, first, last)
   local lines = vim.api.nvim_buf_get_lines(buf, first, last, false)
   for _, line in ipairs(lines) do
@@ -102,7 +102,7 @@ function M.on_lines(buf, first, last)
   end
 end
 
----@param buf number
+---@param buf  number
 ---@param line string
 function M.on_line(buf, line)
   -- Check for words
@@ -123,7 +123,7 @@ function M.on_line(buf, line)
 end
 
 --- Check if a module is available and add it to the library
----@param buf number
+---@param buf     number
 ---@param modname string
 function M.on_mod(buf, modname)
   local ws = Workspace.find({ buf = buf })
@@ -144,10 +144,8 @@ function M.on_mod(buf, modname)
     -- * workspace root
     -- * loaded plugins
     -- * unloaded plugins
-    mod = vim.loader.find(modname, { rtp = false, paths = { ws.root } })[1]
-      or vim.loader.find(modname)[1]
-      or vim.loader.find(modname, { rtp = false, paths = Pkg.get_unloaded(modname) })[1]
-      or false
+    mod = vim.loader.find(modname, { rtp = false, paths = { ws.root } })[1] or vim.loader.find(modname)[1]
+      or vim.loader.find(modname, { rtp = false, paths = Pkg.get_unloaded(modname) })[1] or false
     M.modules[modname] = mod
   end
 
@@ -165,7 +163,7 @@ function M.on_mod(buf, modname)
   end
 end
 
----@param buf number
+---@param buf integer
 function M.on_file(buf)
   -- Check for words
   for file, paths in pairs(Config.files) do
@@ -187,7 +185,7 @@ function M.update()
     local update = false
 
     ---@param ws lsp.WorkspaceFolder
-    local folders = vim.tbl_map(function(ws)
+    local folders = vim.tbl_map(function (ws)
       return Workspace.get(client.id, ws.name)
     end, client.workspace_folders or {})
 

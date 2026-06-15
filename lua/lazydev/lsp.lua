@@ -1,7 +1,7 @@
 local Workspace = require("lazydev.workspace")
 
 local M = {}
-M.attached = {} ---@type table<number,number>
+M.attached = {} ---@type table<number, number>
 M.did_global_handler = false
 M.supported_clients = { "lua_ls", "emmylua_ls" }
 
@@ -13,6 +13,16 @@ end
 ---@param client? vim.lsp.Client
 function M.supports(client)
   return client and vim.tbl_contains(M.supported_clients, client.name)
+end
+
+---@return string?
+---@param client vim.lsp.Client
+function M.which_client(client)
+  if M.supports(client) and client.name == M.supported_clients[1] then
+    return "Lua"
+  elseif M.supports(client) and client.name == M.supported_clients[2] then
+    return "emmylua"
+  end
 end
 
 ---@param client vim.lsp.Client
@@ -35,7 +45,7 @@ function M.attach(client)
     end
     M.did_global_handler = true
     local orig = vim.lsp.handlers["workspace/configuration"]
-    vim.lsp.handlers["workspace/configuration"] = function(err, params, ctx, cfg)
+    vim.lsp.handlers["workspace/configuration"] = function (err, params, ctx, cfg)
       if M.attached[ctx.client_id] then
         return M.on_workspace_configuration(err, params, ctx, cfg)
       end
@@ -63,14 +73,15 @@ function M.on_workspace_configuration(err, params, ctx, cfg)
   for _, item in ipairs(params.items) do
     if item.section then
       local settings = client.settings
-      if item.section == "Lua" then
+      local client_type = M.which_client(client)
+      if item.section == client_type then
         local ws = item.scopeUri and Workspace.get(client, vim.uri_to_fname(item.scopeUri)) or Workspace.single(client)
         if ws:enabled() then
           settings = ws.settings
         end
       end
 
-      local keys = vim.split(item.section, ".", { plain = true }) --- @type string[]
+      local keys = vim.split(item.section, ".", { plain = true }) ---@type string[]
       local value = vim.tbl_get(settings or {}, unpack(keys))
       -- For empty sections with no explicit '' key, return settings as is
       if value == nil and item.section == "" then
@@ -88,13 +99,20 @@ end
 ---@param client vim.lsp.Client
 function M.update(client)
   M.assert(client)
+  local targ_sett
+  local client_type = M.which_client(client)
+  if client_type == "Lua" then
+    targ_sett = { Lua = {} }
+  elseif client_type == "emmylua" then
+    targ_sett = { emmylua = {} }
+  end
   if vim.fn.has("nvim-0.11") == 1 then
     client:notify("workspace/didChangeConfiguration", {
-      settings = { Lua = {} },
+      settings = targ_sett
     })
   else
     client.notify("workspace/didChangeConfiguration", {
-      settings = { Lua = {} },
+      settings = targ_sett
     })
   end
 end
