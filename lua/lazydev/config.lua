@@ -1,12 +1,12 @@
 ---@class lazydev.Config.mod: lazydev.Config
 local M = {}
 
----@alias lazydev.Library {path:string, words:string[], mods:string[], files:string[]}
----@alias lazydev.Library.spec string|{path:string, words?:string[], mods?:string[], files?:string[]}
+---@alias lazydev.Library { path: string, words: string[], mods: string[], files: string[] }
+---@alias lazydev.Library.spec string | { path: string, words?: string[], mods?: string[], files?: string[] }
 ---@class lazydev.Config
 local defaults = {
-  runtime = vim.env.VIMRUNTIME --[[@as string]],
-  library = {}, ---@type lazydev.Library.spec[]
+  runtime = vim.env.VIMRUNTIME, --[[@as string]]
+  library = {},                 ---@type lazydev.Library.spec[]
   integrations = {
     -- Fixes vim.lsp.config workspace management for LuaLS
     -- Only create a new workspace if the buffer is not part
@@ -18,13 +18,13 @@ local defaults = {
     -- `---@module "modname"`
     cmp = true,
     -- same, but for Coq
-    coq = false,
+    coq = false
   },
-  ---@type boolean|(fun(root:string):boolean?)
-  enabled = function(root_dir)
+  ---@type boolean | (fun(root: string): boolean?)
+  enabled = function (root_dir)
     return vim.g.lazydev_enabled == nil and true or vim.g.lazydev_enabled
   end,
-  debug = false,
+  debug = false
 }
 
 M.libs = {} ---@type lazydev.Library[]
@@ -66,14 +66,14 @@ function M.setup(opts)
     path = vim.uv.fs_stat(runtime) and runtime or vim.env.VIMRUNTIME,
     words = {},
     mods = {},
-    files = {},
+    files = {}
   })
   for _, lib in pairs(M.library) do
     table.insert(M.libs, {
       path = type(lib) == "table" and lib.path or lib,
       words = type(lib) == "table" and lib.words or {},
       mods = type(lib) == "table" and lib.mods or {},
-      files = type(lib) == "table" and lib.files or {},
+      files = type(lib) == "table" and lib.files or {}
     })
   end
 
@@ -92,17 +92,21 @@ function M.setup(opts)
     end
   end
 
-  vim.api.nvim_create_user_command("LazyDev", function(...)
-    require("lazydev.cmd").execute(...)
-  end, {
-    nargs = "*",
-    complete = function(...)
-      return require("lazydev.cmd").complete(...)
+  vim.api.nvim_create_user_command(
+    "LazyDev",
+    function (...)
+      require("lazydev.cmd").execute(...)
     end,
-    desc = "lazydev.nvim",
-  })
+    {
+      nargs = "*",
+      complete = function (...)
+        return require("lazydev.cmd").complete(...)
+      end,
+      desc = "lazydev.nvim"
+    }
+  )
 
-  vim.schedule(function()
+  vim.schedule(function ()
     require("lazydev.buf").setup()
     require("lazydev.integrations").setup()
   end)
@@ -110,8 +114,8 @@ function M.setup(opts)
 end
 
 return setmetatable(M, {
-  __index = function(_, key)
+  __index = function (_, key)
     options = options or M.setup()
     return options[key]
-  end,
+  end
 })

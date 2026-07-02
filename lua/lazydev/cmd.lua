@@ -5,7 +5,7 @@ local M = {}
 
 ---@type table<string, fun(args: string[])>
 M.commands = {
-  debug = function()
+  debug = function ()
     local buf = vim.api.nvim_get_current_buf()
     local ws = Workspace.find({ buf = buf })
     if not ws then
@@ -13,7 +13,7 @@ M.commands = {
     end
     ws:debug({ details = true })
   end,
-  lsp = function()
+  lsp = function ()
     local clients = Util.get_clients({ bufnr = 0 })
     local lines = {} ---@type string[]
     for _, client in ipairs(clients) do
@@ -23,7 +23,7 @@ M.commands = {
       lines[#lines + 1] = "```"
     end
     Util.info(lines)
-  end,
+  end
 }
 
 function M.execute(input)
@@ -42,7 +42,7 @@ function M.complete(_, line)
   end
 
   ---@param key string
-  return vim.tbl_filter(function(key)
+  return vim.tbl_filter(function (key)
     return key:find(prefix, 1, true) == 1
   end, vim.tbl_keys(M.commands))
 end
